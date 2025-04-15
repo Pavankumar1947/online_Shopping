@@ -10,6 +10,7 @@ import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,5 +49,11 @@ public class PaymentService {
             log.error("Error while creating Razorpay order for amount ₹{}", amount, e);
             throw e; // Let the controller/service layer decide how to handle it
         }
+    }
+    
+    
+    @Data
+    public static class OrderRequest {
+        private double amount; // INR
     }
 }

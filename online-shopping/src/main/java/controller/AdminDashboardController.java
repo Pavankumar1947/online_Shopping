@@ -24,6 +24,8 @@ public class AdminDashboardController {
     private final ProductRepository productRepo;
     private final OrderRepository orderRepo;
 
+    
+    
     @GetMapping
     public DashboardStats getStats() {
         log.info("Fetching admin dashboard stats");

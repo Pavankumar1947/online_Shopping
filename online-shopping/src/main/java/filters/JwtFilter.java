@@ -28,6 +28,8 @@ public class JwtFilter extends OncePerRequestFilter {
         this.jwtUtil = jwtUtil;
         this.userRepo = userRepo;
     }
+    
+    
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -35,20 +37,25 @@ public class JwtFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
+        // Check if the authorization header contains the JWT token
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String jwt = authHeader.substring(7);
-            String email = jwtUtil.extractUsername(jwt);
+            String jwt = authHeader.substring(7);  // Extract JWT token from the header
+            String email = jwtUtil.extractUsername(jwt);  // Extract username (email) from the token
 
+            // If the email is not null, attempt to authenticate
             if (email != null) {
                 log.info("JWT token found for user: {}", email);
 
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
                     try {
+                        // Find the user in the repository
                         User user = userRepo.findByEmail(email).orElse(null);
 
+                        // If the user exists and the token is valid, authenticate the user
                         if (user != null && jwtUtil.validateToken(jwt, new org.springframework.security.core.userdetails.User(
                                 user.getEmail(), user.getPassword(), List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))))) {
 
+                            // Create an Authentication object and set it in the Security Context
                             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                                     user.getEmail(), null,
                                     List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole())));
@@ -60,12 +67,16 @@ public class JwtFilter extends OncePerRequestFilter {
                         }
                     } catch (Exception e) {
                         log.error("Error during JWT validation for user: {}", email, e);
+                        // You might want to send a 401 Unauthorized response when the token is invalid or expired
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
                     }
                 }
             }
         } else {
             log.warn("Authorization header not found or malformed.");
         }
+
+        // Continue the filter chain
         filterChain.doFilter(request, response);
     }
 }
